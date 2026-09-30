@@ -1,0 +1,45 @@
+services:
+  app:
+    build: .
+    image: task-api:latest
+    container_name: task-api
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      LLM_API_KEY: ${LLM_API_KEY:?LLM_API_KEY is required}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://openrouter.ai/api/v1}
+      LLM_MODEL: ${LLM_MODEL:-meta-llama/llama-3.3-70b-instruct}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.0}
+      QDRANT_URL: http://qdrant:6333
+      COLLECTION_NAME: ${COLLECTION_NAME:-sklearn_docs}
+      TOP_K: ${TOP_K:-4}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-intfloat/multilingual-e5-small}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-384}
+      NORMALIZE_EMBEDDINGS: ${NORMALIZE_EMBEDDINGS:-true}
+    volumes:
+      - ./data:/app/data
+      - hf-cache:/root/.cache/huggingface
+    networks:
+      - mentoring-net
+    depends_on:
+      - qdrant
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.0
+    container_name: qdrant
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+    networks:
+      - mentoring-net
+    restart: unless-stopped
+
+networks:
+  mentoring-net:
+    name: mentoring-net
+    external: true
+
+volumes:
+  hf-cache:
